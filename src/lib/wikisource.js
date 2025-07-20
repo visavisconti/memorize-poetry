@@ -7,7 +7,9 @@ export async function fetchPoemTitles() {
   console.log("API-URL:", apiUrl);
   const res = await fetch(apiUrl);
   const data = await res.json();
-  return data.query.categorymembers.map((item) => item.title);
+  const allTitles = data.query.categorymembers.map((item) => item.title);
+  const filteredTitles = allTitles.filter(title => !title.includes('(') && !title.includes(')'));
+  return filteredTitles;
 }
 
 export async function fetchPoemText(title) {
