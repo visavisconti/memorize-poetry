@@ -4,55 +4,78 @@ import { useEffect, useState } from "react";
 import { dateSeed, mulberry32 } from "../lib/dateSeed";
 import { fetchPoemTitles, fetchPoemText } from "../lib/wikisource";
 
+function groupPoemIntoStanzas(poemText, linesPerStanza = 4) {
+  const lines = poemText.split("\n").map(line => line.trim()).filter(Boolean);
+  const stanzas = [];
+  for (let i = 0; i < lines.length; i += linesPerStanza) {
+    stanzas.push(lines.slice(i, i + linesPerStanza));
+  }
+  return stanzas;
+}
+
 export default function PoemOfTheDay() {
   const [poem, setPoem] = useState({ title: "", text: "" });
-  const [poemIdx, setPoemIdx] = useState(null); // Speichert manuellen Index, sonst null
+  const [poemIdx, setPoemIdx] = useState(null);
   const [titles, setTitles] = useState([]);
+  const [blur, setBlur] = useState(false);
 
-  // Beim ersten Rendern: Titel laden
+  // Initial: Lade die Titel und das Tagesgedicht
   useEffect(() => {
-    async function loadTitlesAndPoem() {
+    async function initialLoad() {
       const loadedTitles = await fetchPoemTitles();
       setTitles(loadedTitles);
 
-      // Initiales Gedicht: Seed wie gehabt (täglich gleich)
       const rng = mulberry32(dateSeed());
       const idx = Math.floor(rng() * loadedTitles.length);
-      setPoemIdx(idx); // Index speichern, damit wir später einfach weiterzählen/-würfeln
+      const title = loadedTitles[idx];
+      const text = await fetchPoemText(title);
+
+      setPoem({ title, text: text.trim() });
+      setPoemIdx(idx);
     }
-    loadTitlesAndPoem();
+    initialLoad();
   }, []);
 
-  // Bei Index-Änderung: Gedicht laden
-  useEffect(() => {
-    if (!titles.length || poemIdx === null) return;
-
-    async function loadPoem() {
-      const title = titles[poemIdx];
-      const text = await fetchPoemText(title);
-      setPoem({ title, text });
-    }
-    loadPoem();
-  }, [poemIdx, titles]);
-
-  // Button-Handler: zufälligen Index wählen (der sich evtl. vom aktuellen unterscheidet)
-  function handleClick() {
+  // Button: Lade zufällig anderes Gedicht
+  async function handleOtherPoem() {
     if (!titles.length) return;
     let newIdx;
     do {
       newIdx = Math.floor(Math.random() * titles.length);
-    } while (newIdx === poemIdx && titles.length > 1); // kein doppeltes Gedicht
+    } while (titles.length > 1 && newIdx === poemIdx); // kein Duplikat
+    const title = titles[newIdx];
+    const text = await fetchPoemText(title);
+
+    setPoem({ title, text: text.trim() });
     setPoemIdx(newIdx);
+    setBlur(false);
   }
 
   return (
     <div>
+      <style>{`
+        .poem-stanza {
+          margin-bottom: 1.5rem;
+          transition: filter 0.3s ease;
+        }
+        .blurry {
+          filter: blur(4px);
+        }
+        .blurry:hover {
+          filter: blur(0);
+        }
+      `}</style>
       <h2>{poem.title}</h2>
-      <pre style={{ whiteSpace: "pre-wrap" }}>{poem.text}</pre>
       <button
-        onClick={handleClick}
+        onClick={() => setBlur(b => !b)}
+        style={{ marginBottom: "1rem", marginRight: "1rem"}}
+      >
+        {blur ? "Gedicht scharf machen" : "Gedicht unscharf machen"}
+      </button>
+      <button
+        onClick={handleOtherPoem}
         style={{
-          marginTop: "1rem",
+          marginBottom: "1rem",
           padding: "0.5rem 1rem",
           fontSize: "1rem",
           cursor: "pointer"
@@ -60,7 +83,15 @@ export default function PoemOfTheDay() {
       >
         Anderes Gedicht anzeigen
       </button>
+      <div id="poem">
+        {groupPoemIntoStanzas(poem.text, 4).map((stanza, idx) => (
+          <div className={`poem-stanza${blur ? " blurry" : ""}`} key={idx}>
+            {stanza.map((line, lidx) => (
+              <div key={lidx}>{line}</div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
-
