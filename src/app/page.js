@@ -1,5 +1,5 @@
 import Image from "next/image";
-import PoemOfTheDay from '../components/PoemOfTheDay2';
+import PoemOfTheDay from '../components/PoemOfTheDay';
 
 export default function Home() {
   return (
