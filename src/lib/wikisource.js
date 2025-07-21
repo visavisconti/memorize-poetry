@@ -1,7 +1,7 @@
 // lib/wikisource.js
 export async function fetchPoemTitles() {
   const category = "Kategorie:Gedicht";
-  const apiUrl = `${process.env.WIKISOURCE_API_BASE}?action=query&list=categorymembers&cmtitle=${encodeURIComponent(category)}&cmlimit=50&format=json&origin=*`;
+  const apiUrl = `${process.env.WIKISOURCE_API_BASE}?action=query&list=categorymembers&cmtitle=${encodeURIComponent(category)}&cmlimit=500&format=json&origin=*`;
   
  
   console.log("API-URL:", apiUrl);
