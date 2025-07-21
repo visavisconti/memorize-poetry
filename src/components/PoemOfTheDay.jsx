@@ -1,9 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-"use client";
-
-import { useEffect, useState } from "react";
 import { dateSeed, mulberry32 } from "../lib/dateSeed";
 import { fetchPoemTitles, fetchPoemText } from "../lib/wikisource";
 
